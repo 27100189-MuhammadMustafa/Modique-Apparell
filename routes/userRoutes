@@ -7,16 +7,17 @@ userRouter.get('/getUsers', authMiddleware.authenticate, userController.getUsers
 userRouter.get('/getUserById/:id', authMiddleware.authenticate, userController.getUserById);
 userRouter.post('/signUp', userController.postSignUp);
 userRouter.post('/login',userController.postLogin);
-userRouter.post('/addProduct', userController.postAddProduct);
-userRouter.get('/getProducts', userController.getProducts);
-userRouter.get('/getProductById/:id', userController.getProductById);
-userRouter.post('/updateProduct/:id',userController.updateProduct);
-userRouter.delete('/deleteProduct/:id', userController.deleteProduct);
-userRouter.get('/filteredProducts', userController.getFilteredProducts);
-userRouter.post('/updateStock',userController.updateStock)
-userRouter.post('/updatePrice', userController.updatePrice)
-userRouter.get('/getLowStockProducts', userController.getLowStockProducts);
-userRouter.post('/placeOrder/:id',userController.placeOrder);
-userRouter.get('/viewOrders', userController.viewOrders);
+userRouter.post('/addProduct',authMiddleware.authenticate, userController.postAddProduct);
+userRouter.get('/getProducts',authMiddleware.authenticate, userController.getProducts);
+userRouter.get('/getProductById/:id',authMiddleware.authenticate, userController.getProductById);
+userRouter.post('/updateProduct/:id',authMiddleware.authenticate,userController.updateProduct);
+userRouter.delete('/deleteProduct/:id',authMiddleware.authenticate, userController.deleteProduct);
+userRouter.get('/filteredProducts',authMiddleware.authenticate, userController.getFilteredProducts);
+userRouter.patch('/updateStock/:id',authMiddleware.authenticate,userController.updateStock)
+userRouter.post('/updatePrice/:id',authMiddleware.authenticate, userController.updatePrice)
+userRouter.get('/getLowStockProducts',authMiddleware.authenticate, userController.getLowStockProducts);
+userRouter.post('/placeOrder/:id',authMiddleware.authenticate,userController.placeOrder);
+userRouter.get('/viewOrders',authMiddleware.authenticate, userController.viewOrders);
+userRouter.post('/updateOrderStatus/:id',authMiddleware.authenticate, userController.updateOrderStatus);
 
 module.exports = userRouter;

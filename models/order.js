@@ -65,6 +65,10 @@ const orderSchema = new mongoose.Schema({
     isDeletedFromCart: {
         type: Boolean,
         default: false
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
 })
 module.exports = mongoose.model('Order', orderSchema);
