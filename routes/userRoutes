@@ -1,0 +1,22 @@
+const express = require('express');
+const userRouter = express.Router();
+const userController = require('../controller/userController');
+const authMiddleware = require("./authMiddleware")
+
+userRouter.get('/getUsers', authMiddleware.authenticate, userController.getUsers);
+userRouter.get('/getUserById/:id', authMiddleware.authenticate, userController.getUserById);
+userRouter.post('/signUp', userController.postSignUp);
+userRouter.post('/login',userController.postLogin);
+userRouter.post('/addProduct', userController.postAddProduct);
+userRouter.get('/getProducts', userController.getProducts);
+userRouter.get('/getProductById/:id', userController.getProductById);
+userRouter.post('/updateProduct/:id',userController.updateProduct);
+userRouter.delete('/deleteProduct/:id', userController.deleteProduct);
+userRouter.get('/filteredProducts', userController.getFilteredProducts);
+userRouter.post('/updateStock',userController.updateStock)
+userRouter.post('/updatePrice', userController.updatePrice)
+userRouter.get('/getLowStockProducts', userController.getLowStockProducts);
+userRouter.post('/placeOrder/:id',userController.placeOrder);
+userRouter.get('/viewOrders', userController.viewOrders);
+
+module.exports = userRouter;
