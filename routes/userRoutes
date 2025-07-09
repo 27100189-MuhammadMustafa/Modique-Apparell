@@ -19,5 +19,7 @@ userRouter.get('/getLowStockProducts',authMiddleware.authenticate, userControlle
 userRouter.post('/placeOrder/:id',authMiddleware.authenticate,userController.placeOrder);
 userRouter.get('/viewOrders',authMiddleware.authenticate, userController.viewOrders);
 userRouter.post('/updateOrderStatus/:id',authMiddleware.authenticate, userController.updateOrderStatus);
+userRouter.get('/getReturnRequests',userController.getReturnRequests);
+userRouter.post('/manageReturnRequest/:id', userController.manageReturnRequest);
 
 module.exports = userRouter;

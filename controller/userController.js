@@ -159,7 +159,7 @@ exports.updateProduct = async (req, res) => {
     
     const updatedProduct = await product.save();
     
-    return res.status(200).send("Product updated successfully");
+    return res.status(200).send({msg:"Product updated successfully"}, {product: updatedProduct});
 }
 exports.deleteProduct = async (req, res) => {
     const productId = req.params.id;
@@ -321,4 +321,31 @@ exports.updateOrderStatus = async (req, res) => {
     order.updatedAt = new Date();
     await order.save();
     return res.status(200).send({msg:"Order status updated successfully" , orderStatus: order.orderStatus});
+}
+exports.getReturnRequests = async (req, res) => {
+    const returnRequests = await Order.find({ orderStatus: 'Return Requested'});
+    if(returnRequests.length === 0) {
+        return res.status(400).send("No return requests found");
+    }
+    return res.status(200).json(returnRequests);
+}
+exports.manageReturnRequest = async (req, res) => {
+    const orderId = req.params.id;
+    const { action } = req.body;
+    const order = await Order.findById(orderId);
+    if(!order) {
+        return res.status(400).send("No order found with this ID");
+    }
+    if(!['Accept', 'Reject'].includes(action)) {
+        return res.status(400).send("Invalid action. Use 'Accept' or 'Reject'");
+    }
+    if(action === 'Accept') {
+        order.orderStatus = 'Returned';
+        order.paymentStatus = 'Refunded';
+    } else if(action === 'Reject') {
+        order.orderStatus = 'Cancelled';
+    }
+    order.updatedAt = new Date();
+    await order.save();
+    return res.status(200).send({msg: "Return request managed successfully", orderStatus: order.orderStatus, paymentStatus: order.paymentStatus});
 }
