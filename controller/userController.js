@@ -236,7 +236,7 @@ exports.updatePrice = async (req, res) => {
     product.price = newPrice;
     product.updatedAt = new Date();
     await product.save();
-    return res.status(200).send("Price updated successfully");
+    return res.status(200).send({msg:"Price updated successfully" , newPrice: product.price});
 }
 exports.getLowStockProducts = async (req, res) => {
     const lowStockProducts = await Product.find({ 
@@ -307,6 +307,18 @@ exports.viewOrders = async (req, res) => {
     }
     return res.status(200).json(orders);
 }
-exports.orderStatus = async (req, res) => {
-    //doing
+exports.updateOrderStatus = async (req, res) => {
+    const orderId = req.params.id;
+    const { status } = req.body;
+    const order = await Order.findById(orderId);
+    if(!order) {
+        return res.status(400).send("No order found with this ID");
+    }
+    if(!['Pending', 'Processing','Accepted', 'Shipped', 'Delivered','Not Recieved', 'Cancelled'].includes(status)) {
+        return res.status(400).send("Invalid status");
+    }
+    order.orderStatus = status;
+    order.updatedAt = new Date();
+    await order.save();
+    return res.status(200).send({msg:"Order status updated successfully" , orderStatus: order.orderStatus});
 }
