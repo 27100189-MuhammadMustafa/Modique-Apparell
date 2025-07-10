@@ -41,5 +41,23 @@ const productSchema = new mongoose.Schema({
     updatedAt: Date,
     deletedAt: Date,
     isDeletedFromCart: Boolean,
+    isOnSale: Boolean,
+
+    reviews: [
+        {
+            userId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+                required: true
+            },
+            rating: {
+                type: Number,
+                required: true,
+                min: 1,
+                max: 5
+            },
+            comment: String,
+        }
+    ]
 })
 module.exports = mongoose.model('Product', productSchema);
