@@ -5,11 +5,19 @@ const {check,validationResult} = require("express-validator");
 const bcrypt = require("bcryptjs");
 const Product = require('../models/products');
 const Order = require('../models/order');
+const Discount = require('../models/discounts');
 
 
 exports.getUsers = async (req, res) => {
-    const registeredUsers = await User.find();
-    return res.status(200).send(registeredUsers)
+    const role = req.query.role;
+    if(role && role !== '1' && role !== '2') {
+        return res.status(400).send("Invalid role specified");
+    }
+    const users = await User.find({role: parseInt(role)}).select('-password');
+    if(users.length === 0) {
+        return res.status(400).send("No users found");
+    }
+    return res.status(200).send(users);
 };
 exports.getUserById = async (req,res) => {
     const userId = req.params.id;
@@ -248,57 +256,81 @@ exports.getLowStockProducts = async (req, res) => {
     return res.status(200).json(lowStockProducts);
 }
 exports.placeOrder = async (req, res) => {
-        const { products, deliveryAddress, deliveryCity, deliveryState, deliveryZip, deliveryCountry, paymentMethod } = req.body;
-        const userId = req.params.id;
+    console.log("in this middleware");
+    const { products, deliveryAddress, deliveryCity, deliveryState, deliveryZip, deliveryCountry, paymentMethod, email, phoneNumber, firstName, lastName } = req.body;
     
-        if (!products || products.length === 0) {
-            return res.status(400).send("No products in the order");
-        }
+    // Find user by email
+    let user = await User.findOne({ email: email });
+    let userId = user ? user._id : undefined;
     
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).send("User not found");
-        }
+    if (!products || products.length === 0) {
+        return res.status(400).send("No products in the order");
+    }
     
-        let total = 0;
-    
-        for (const product of products) {
-            const productDetails = await Product.findById(product.productId);
-            if (!productDetails) {
-                return res.status(400).send(`Product with ID ${product.productId} not found`);
-            }
-            const quantity = Number(product.quantity);
-            if (productDetails.stock < quantity) {
-                return res.status(400).send(`Insufficient stock for product ${productDetails.name}`);
-            }
-    
-            productDetails.stock -= quantity;
-            await productDetails.save();
-    
-            const amount = productDetails.price * quantity;
-            total += amount;
-        }
-    
-        const newOrder = new Order({
-            userId: userId,
-            products: products,
-            totalAmount: total,
-            orderStatus: 'Pending',
-            paymentStatus: 'Pending',
-            paymentMethod: paymentMethod || 'Cash on Delivery',
-            deliveryAddress: deliveryAddress,
-            deliveryCity: deliveryCity,
-            deliveryState: deliveryState,
-            deliveryZip: deliveryZip,
-            deliveryCountry: deliveryCountry,
-            orderDate: new Date()
+    // If user does not exist, create one
+    if (!user) {
+        user = new User({
+            firstName: firstName || '',
+            lastName: lastName || '',
+            email: email,
+            phoneNumber: phoneNumber || '',
+            role: 1,
+            orderCount: 0,
+            orderReturns: 0
         });
-    
-        const savedOrder = await newOrder.save();
-        user.orderCount = (user.orderCount || 0) + 1;
         await user.save();
+        userId = user._id;
+    }
     
-        return res.status(201).send({ msg: "Order placed successfully", orderId: savedOrder._id });
+    let total = 0;
+    
+    for (const product of products) {
+        const productDetails = await Product.findById(product.productId);
+        if (!productDetails) {
+            return res.status(400).send(`Product with ID ${product.productId} not found`);
+        }
+        const quantity = Number(product.quantity);
+        if (isNaN(quantity) || quantity <= 0) {
+            return res.status(400).send(`Invalid quantity for product ${productDetails.name}`);
+        }
+        if (productDetails.stock < quantity) {
+            return res.status(400).send(`Insufficient stock for product ${productDetails.name}`);
+        }
+    
+        productDetails.stock -= quantity;
+        if (productDetails.stock <= 0) {
+            productDetails.isActive = false;
+        }
+        await productDetails.save();
+    
+        const amount = productDetails.price * quantity;
+        total += amount;
+    }
+    
+    const newOrder = new Order({
+        userId: userId,
+        products: products,
+        totalAmount: total,
+        orderStatus: 'Pending',
+        paymentStatus: 'Pending',
+        paymentMethod: paymentMethod || 'Cash on Delivery',
+        deliveryAddress: deliveryAddress,
+        deliveryCity: deliveryCity,
+        deliveryState: deliveryState,
+        deliveryZip: deliveryZip,
+        deliveryCountry: deliveryCountry,
+        email: email || user.email,
+        phoneNumber: phoneNumber || user.phoneNumber,
+        firstName: firstName || user.firstName,
+        lastName: lastName || user.lastName,
+        orderDate: new Date()
+    });
+    
+    const savedOrder = await newOrder.save();
+    user.orderCount = (user.orderCount || 0) + 1;
+    await user.save();
+    
+    return res.status(201).send({ msg: "Order placed successfully", orderId: savedOrder._id });
 }
 exports.viewOrders = async (req, res) => {
     const orders = await Order.find();
@@ -348,4 +380,101 @@ exports.manageReturnRequest = async (req, res) => {
     order.updatedAt = new Date();
     await order.save();
     return res.status(200).send({msg: "Return request managed successfully", orderStatus: order.orderStatus, paymentStatus: order.paymentStatus});
+}
+exports.addToSale = async (req, res) => {
+    const { name, salePrice, discountPercentage, startDate, endDate} = req.body;
+    const productId = req.params.id;
+    if(!name || !salePrice || !discountPercentage || !startDate || !endDate) {
+        return res.status(400).send("Please provide all required fields");
+    }
+    if(discountPercentage <= 0 || discountPercentage > 100) {
+        return res.status(400).send("Discount percentage must be between 1 and 100");
+    }
+    if(new Date(startDate) >= new Date(endDate)) {
+        return res.status(400).send("End date must be after start date");
+    }
+    const discount = new Discount({
+        name,
+        productId: productId,
+        salePrice,
+        discountPercentage,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        isActive: true
+    });
+    const savedDiscount = await discount.save();
+    return res.status(201).send({msg: "Sale added successfully", discount: savedDiscount});
+}
+exports.viewYourProfile = async (req, res) => {
+    const userId = req.params.id;
+    const user = await User.findById(userId);
+    if(!user) {
+        return res.status(400).send("No user found with this ID");
+    }
+    return res.status(200).json({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        orderCount: user.orderCount || 0,
+        orderReturns: user.orderReturns || 0,
+    })
+}
+exports.viewProducts = async (req,res) => {
+    const products = await Product.find({ isActive: true });
+    if(products.length === 0) {
+        return res.status(400).send("No products found");
+    }
+    return res.status(200).json(products);
+}
+exports.detailsOfProduct = async (req, res) => {
+    const productId = req.params.id;
+    const product =  await Product.findById(productId).select('-createdAt -updatedAt -deletedAt -isDeletedFromCart -hashVariants -stock -lowStockThreshold -isActive -ratings -materials -options -variants');
+    if(!product) {
+        return res.status(400).send("No product found with this ID");
+    }
+    return res.status(200).json(product);
+}
+exports.viewProductReviews = async (req, res) => {
+    const productId = req.params.id;
+    const product = await Product.findById(productId).select('reviews');
+    if(!product) {
+        return res.status(400).send("No product found with this ID");
+    }
+    if(product.reviews.length === 0) {
+        return res.status(400).send("No reviews found for this product");
+    }
+    return res.status(200).json(product.reviews);
+}
+exports.sendReview = async (req, res) => {
+    const productId = req.params.id;
+    const { rating, comment, email } = req.body;
+    const userId =  await User.findOne({email:email}).select('_id');
+    if(!userId) {
+        return res.status(400).send("No user found with this email");
+    }
+    if(!productId) {
+        return res.status(400).send("Product ID is required");
+    }
+    if(!rating) {
+        return res.status(400).send("Rating is required");
+    }
+    if(!rating || rating < 1 || rating > 5) {
+        return res.status(400).send("Rating must be between 1 and 5");
+    }
+    
+    const product = await Product.findById(productId);
+    if(!product) {
+        return res.status(400).send("No product found with this ID");
+    }
+
+    const review = {
+        userId: userId._id,
+        rating: rating,
+        comment: comment || ''
+    };
+
+    product.reviews.push(review);
+    await product.save();
+
+    return res.status(201).send("Review added successfully");
 }
