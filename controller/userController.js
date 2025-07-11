@@ -475,3 +475,35 @@ exports.sendReview = async (req, res) => {
 
     return res.status(201).send("Review added successfully");
 }
+exports.getOrdersByTimePeriod = async (req, res) => {
+    const {timePeriod} = req.body;
+    const currentDate = new Date();
+    let startDate;
+    switch(timePeriod) {
+        case 'today':
+            startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+            break;
+        case 'thisWeek':
+            const firstDayOfWeek = currentDate.getDate() - currentDate.getDay();
+            startDate = new Date(currentDate.setDate(firstDayOfWeek));
+            break;
+        case 'thisMonth':
+            startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            break;
+        case 'thisYear':
+            startDate = new Date(currentDate.getFullYear(), 0, 1);
+            break;
+        default:
+            return res.status(400).send("Invalid time period specified");
+    }
+    const orders = await Order.find({
+        orderDate: {
+            $gte: startDate,
+            $lte: currentDate
+        }
+    }).populate('userId', 'firstName lastName email');
+    if(orders.length === 0) {
+        return res.status(400).send("No orders found for the specified time period");
+    }
+    return res.status(200).json({orders,count: orders.length});
+}
