@@ -477,6 +477,7 @@ exports.sendReview = async (req, res) => {
 }
 exports.getOrdersByTimePeriod = async (req, res) => {
     const {timePeriod} = req.body;
+    const now = new Date();
     const currentDate = new Date();
     let startDate;
     switch(timePeriod) {
@@ -484,18 +485,24 @@ exports.getOrdersByTimePeriod = async (req, res) => {
             startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
             break;
         case 'thisWeek':
-            const firstDayOfWeek = currentDate.getDate() - currentDate.getDay();
-            startDate = new Date(currentDate.setDate(firstDayOfWeek));
+            const today = new Date(now);
+            today.setHours(0, 0, 0, 0);
+            const dayOfWeek = today.getDay();
+            const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - diff);
             break;
         case 'thisMonth':
             startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
             break;
         case 'thisYear':
             startDate = new Date(currentDate.getFullYear(), 0, 1);
-            break;
+                break;
         default:
             return res.status(400).send("Invalid time period specified");
     }
+                    
+    console.log(startDate)
     const orders = await Order.find({
         orderDate: {
             $gte: startDate,
