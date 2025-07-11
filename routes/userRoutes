@@ -2,7 +2,7 @@ const express = require('express');
 const userRouter = express.Router();
 const userController = require('../controller/userController');
 const authMiddleware = require("./authMiddleware")
-
+//admin side
 userRouter.get('/getUsers', authMiddleware.authenticate, userController.getUsers);
 userRouter.get('/getUserById/:id', authMiddleware.authenticate, userController.getUserById);
 userRouter.post('/signUp', userController.postSignUp);
@@ -16,16 +16,18 @@ userRouter.get('/filteredProducts',authMiddleware.authenticate, userController.g
 userRouter.patch('/updateStock/:id',authMiddleware.authenticate,userController.updateStock)
 userRouter.patch('/updatePrice/:id',authMiddleware.authenticate, userController.updatePrice)
 userRouter.get('/getLowStockProducts',authMiddleware.authenticate, userController.getLowStockProducts);
-userRouter.post('/placeOrder',userController.placeOrder);
 userRouter.get('/viewOrders',authMiddleware.authenticate, userController.viewOrders);
 userRouter.post('/updateOrderStatus/:id',authMiddleware.authenticate, userController.updateOrderStatus);
 userRouter.get('/getReturnRequests',authMiddleware.authenticate,userController.getReturnRequests);
 userRouter.post('/manageReturnRequest/:id',authMiddleware.authenticate, userController.manageReturnRequest);
-userRouter.post('/getOrdersByTimePeriod', userController.getOrdersByTimePeriod);
+userRouter.post('/getOrdersByTimePeriod',authMiddleware.authenticate, userController.getOrdersByTimePeriod);
+
+//customer side
 userRouter.post('/addToSales/:id', userController.addToSale);
 userRouter.get('/viewYourProfile/:id',userController.viewYourProfile);
 userRouter.get('/viewProducts',userController.viewProducts);
 userRouter.get('/detailsOfProduct/:id',userController.detailsOfProduct);
 userRouter.get('/viewProductReviews/:id',userController.viewProductReviews);
 userRouter.post('/sendReview/:id',userController.sendReview);
+userRouter.post('/placeOrder',userController.placeOrder);
 module.exports = userRouter;
