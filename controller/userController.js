@@ -102,7 +102,7 @@ exports.postLogout = (req,res) => {
 }
 
 exports.postAddProduct = async ( req, res) => {
-    const {name, description, category, subCategory, price, stock, lowStockThreshold, hashVariants, variants, options, materials} = req.body;
+    const {name, description, category, subCategory, price, stock, lowStockThreshold,variants, options, materials} = req.body;
     if (!name || !description || !category || !subCategory || !price || !stock) {
         return res.status(400).send("Please provide all required fields");
     }
@@ -114,7 +114,6 @@ exports.postAddProduct = async ( req, res) => {
         price,
         stock,
         lowStockThreshold,
-        hashVariants,
         variants,
         options,
         materials,
@@ -259,7 +258,6 @@ exports.placeOrder = async (req, res) => {
     console.log("in this middleware");
     const { products, deliveryAddress, deliveryCity, deliveryState, deliveryZip, deliveryCountry, paymentMethod, email, phoneNumber, firstName, lastName } = req.body;
     
-    // Find user by email
     let user = await User.findOne({ email: email });
     let userId = user ? user._id : undefined;
     
@@ -267,7 +265,6 @@ exports.placeOrder = async (req, res) => {
         return res.status(400).send("No products in the order");
     }
     
-    // If user does not exist, create one
     if (!user) {
         user = new User({
             firstName: firstName || '',

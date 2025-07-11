@@ -9,7 +9,6 @@ const productSchema = new mongoose.Schema({
     stock: Number,
     lowStockThreshold: Number,
 
-    hashVariants: Boolean,
     variants: [
         {
             name: String, // e.g, "Color", "Size"
