@@ -417,7 +417,7 @@ exports.viewYourProfile = async (req, res) => {
     })
 }
 exports.viewProducts = async (req,res) => {
-    const products = await Product.find({ isActive: true });
+    const products = await Product.find();
     if(products.length === 0) {
         return res.status(400).send("No products found");
     }
