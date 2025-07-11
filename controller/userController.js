@@ -343,7 +343,7 @@ exports.updateOrderStatus = async (req, res) => {
     if(!order) {
         return res.status(400).send("No order found with this ID");
     }
-    if(!['Pending', 'Processing','Accepted', 'Shipped', 'Delivered','Not Recieved', 'Cancelled'].includes(status)) {
+    if(!['Pending', ,'Accepted', 'Shipped', 'Delivered','Not Recieved', 'Cancelled','Returned','Refunded','Return Requested'].includes(status)) {
         return res.status(400).send("Invalid status");
     }
     order.orderStatus = status;
