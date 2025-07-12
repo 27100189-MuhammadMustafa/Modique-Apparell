@@ -144,24 +144,23 @@ exports.getProductById = async (req, res) => {
 }
 exports.updateProduct = async (req, res) => {
     const productId = req.params.id;
-    const {name, description, category, subCategory, price, stock, lowStockThreshold, hashVariants, variants, options, materials} = req.body;
+    const {name, description, category, subCategory, price, stock, lowStockThreshold, variants, options, materials} = req.body;
     
     const product = await Product.findById(productId);
     if(!product) {
         return res.status(400).send("No product found with this ID");
     }
     
-    product.name = name || product.name;
-    product.description = description || product.description;
-    product.category = category || product.category;
-    product.subCategory = subCategory || product.subCategory;
-    product.price = price || product.price;
-    product.stock = stock || product.stock;
-    product.lowStockThreshold = lowStockThreshold || product.lowStockThreshold;
-    product.hashVariants = hashVariants !== undefined ? hashVariants : product.hashVariants;
-    product.variants = variants || product.variants;
-    product.options = options || product.options;
-    product.materials = materials || product.materials;
+    product.name = name;
+    product.description = description;
+    product.category = category;
+    product.subCategory = subCategory;
+    product.price = price;
+    product.stock = stock;
+    product.lowStockThreshold = lowStockThreshold;
+    product.variants = variants;
+    product.options = options;
+    product.materials = materials;
     
     const updatedProduct = await product.save();
     
@@ -529,4 +528,57 @@ exports.postSubscribe = async (req, res) => {
     user.isSubscribed = true;
     await user.save();
     return res.status(200).send("User subscribed successfully");
+}
+exports.postUnsubscribe = async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).send("Email is required");
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+        return res.status(400).send("User not found with this email");
+    }
+    if (!user.isSubscribed) {
+        return res.status(400).send("User is already unsubscribed");
+    }
+    user.isSubscribed = false;
+    await user.save();
+    return res.status(200).send("User unsubscribed successfully");
+}
+exports.getSubscribedUsers = async (req, res) => {
+    const subscribedUsers = await User.find({ isSubscribed: true });
+    if (subscribedUsers.length === 0) {
+        return res.status(400).send("No subscribed users found");
+    }
+    return res.status(200).json(subscribedUsers);
+}
+exports.getUserOrders = async (req, res) => {
+    const userId = req.params.id;
+    const orders = await Order.find({ userId: userId }).populate('userId', 'firstName lastName email');
+    if (orders.length === 0) {
+        return res.status(400).send("No orders found for this user");
+    }
+    return res.status(200).json(orders);
+}
+exports.returnRequest = async (req, res) => {
+    const { orderId, reason } = req.body;
+    if (!orderId || !reason) {
+        return res.status(400).send("Order ID and reason are required");
+    }
+    const order = await Order.findById(orderId);
+    if (!order) {
+        return res.status(400).send("No order found with this ID");
+    }
+    if (order.orderStatus !== 'Delivered') {
+        return res.status(400).send("Order must be delivered to request a return");
+    }
+    if (order.orderStatus === 'Return Requested') {
+        return res.status(400).send("Return request already exists for this order");
+    }
+    order.orderStatus = 'Return Requested';
+    order.returnReason = reason;
+    order.updatedAt = new Date();
+    await order.save();
+    return res.status(200).send("Return request submitted successfully");
+
 }
