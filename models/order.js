@@ -85,6 +85,10 @@ const orderSchema = new mongoose.Schema({
     updatedAt: {
         type: Date,
         default: Date.now
+    },
+    returnReason: {
+        type: String,
+        default: ''
     }
 })
 module.exports = mongoose.model('Order', orderSchema);
