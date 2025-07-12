@@ -31,6 +31,14 @@ const userSchema = new mongoose.Schema({
     orderReturns: {
         type: Number,
         default: 0
+    },
+    totalSpent: {
+        type: Number,
+        default: 0
+    },
+    isSubscribed: {
+        type: Boolean,
+        default: false
     }
 })
 

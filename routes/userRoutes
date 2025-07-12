@@ -30,4 +30,5 @@ userRouter.get('/detailsOfProduct/:id',userController.detailsOfProduct);
 userRouter.get('/viewProductReviews/:id',userController.viewProductReviews);
 userRouter.post('/sendReview/:id',userController.sendReview);
 userRouter.post('/placeOrder',userController.placeOrder);
+userRouter.post('/postSubscribe', userController.postSubscribe);
 module.exports = userRouter;

@@ -58,7 +58,6 @@ exports.postSignUp = [
             {
                 return res.status(400).send("User exists already go to login page")
             }
-            // Hash the password
             const hashedPassword = await bcrypt.hash(password, 12)
             const newUser = new User ({
                 firstName,
@@ -325,6 +324,7 @@ exports.placeOrder = async (req, res) => {
     
     const savedOrder = await newOrder.save();
     user.orderCount = (user.orderCount || 0) + 1;
+    user.totalSpent = (user.totalSpent || 0) + total;
     await user.save();
     
     return res.status(201).send({ msg: "Order placed successfully", orderId: savedOrder._id });
@@ -425,7 +425,7 @@ exports.viewProducts = async (req,res) => {
 }
 exports.detailsOfProduct = async (req, res) => {
     const productId = req.params.id;
-    const product =  await Product.findById(productId).select('-createdAt -updatedAt -deletedAt -isDeletedFromCart -hashVariants -stock -lowStockThreshold -isActive -ratings -materials -options -variants');
+    const product =  await Product.findById(productId).select('-createdAt -updatedAt -deletedAt -isDeletedFromCart -hashVariants -lowStockThreshold -isActive -ratings -materials -options -variants');
     if(!product) {
         return res.status(400).send("No product found with this ID");
     }
@@ -513,4 +513,20 @@ exports.getOrdersByTimePeriod = async (req, res) => {
         return res.status(400).send("No orders found for the specified time period");
     }
     return res.status(200).json({orders,count: orders.length});
+}
+exports.postSubscribe = async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).send("Email is required");
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+        return res.status(400).send("User not found with this email");
+    }
+    if (user.isSubscribed) {
+        return res.status(400).send("User is already subscribed");
+    }
+    user.isSubscribed = true;
+    await user.save();
+    return res.status(200).send("User subscribed successfully");
 }
