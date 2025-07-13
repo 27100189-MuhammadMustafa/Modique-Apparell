@@ -1,39 +1,101 @@
-const express = require('express');
+const express = require("express");
 const userRouter = express.Router();
-const userController = require('../controller/userController');
-const authMiddleware = require("./authMiddleware")
+const userController = require("../controller/userController");
+const authMiddleware = require("./authMiddleware");
 //admin side
-userRouter.get('/getUsers', authMiddleware.authenticate, userController.getUsers);
-userRouter.get('/getUserById/:id', authMiddleware.authenticate, userController.getUserById);
-userRouter.post('/signUp', userController.postSignUp);
-userRouter.post('/login',userController.postLogin);
-userRouter.post('/addProduct',authMiddleware.authenticate, userController.postAddProduct);
-userRouter.get('/getProducts',authMiddleware.authenticate, userController.getProducts);
-userRouter.get('/getProductById/:id', userController.getProductById);
-userRouter.post('/updateProduct/:id',userController.updateProduct);
-userRouter.delete('/deleteProduct/:id',authMiddleware.authenticate, userController.deleteProduct);
-userRouter.get('/filteredProducts',authMiddleware.authenticate, userController.getFilteredProducts);
-userRouter.patch('/updateStock/:id',authMiddleware.authenticate,userController.updateStock)
-userRouter.patch('/updatePrice/:id',authMiddleware.authenticate, userController.updatePrice)
-userRouter.get('/getLowStockProducts',authMiddleware.authenticate, userController.getLowStockProducts);
-userRouter.get('/viewOrders',authMiddleware.authenticate, userController.viewOrders);
-userRouter.post('/updateOrderStatus/:id',authMiddleware.authenticate, userController.updateOrderStatus);
-userRouter.get('/getReturnRequests',authMiddleware.authenticate,userController.getReturnRequests);
-userRouter.post('/manageReturnRequest/:id',authMiddleware.authenticate, userController.manageReturnRequest);
-userRouter.post('/getOrdersByTimePeriod',authMiddleware.authenticate, userController.getOrdersByTimePeriod);
-userRouter.post('/addToSales/:id',authMiddleware.authenticate, userController.addToSale);
-userRouter.get('/getSubscribedUsers',userController.getSubscribedUsers);
-userRouter.get('/getUserOrders/:id',userController.getUserOrders);
+userRouter.get(
+  "/getUsers",
+  authMiddleware.authenticate,
+  userController.getUsers
+); //done
+userRouter.get(
+  "/getUserById/:id",
+  authMiddleware.authenticate,
+  userController.getUserById
+);
+userRouter.post("/signUp", userController.postSignUp); // done
+userRouter.post("/login", userController.postLogin); // done
+userRouter.post(
+  "/addProduct",
+  authMiddleware.authenticate,
+  userController.postAddProduct
+); // done
+userRouter.get(
+  "/getProducts",
+  authMiddleware.authenticate,
+  userController.getProducts
+); // done
+userRouter.get(
+  "/getProductById/:id",
+  authMiddleware.authenticate,
+  userController.getProductById
+); // done
+userRouter.post(
+  "/updateProduct/:id",
+  authMiddleware.authenticate,
+  userController.updateProduct
+); // done
+userRouter.delete(
+  "/deleteProduct/:id",
+  authMiddleware.authenticate,
+  userController.deleteProduct
+); // done
+userRouter.get(
+  "/filteredProducts",
+  authMiddleware.authenticate,
+  userController.getFilteredProducts
+); // done
+userRouter.patch(
+  "/updateStock/:id",
+  authMiddleware.authenticate,
+  userController.updateStock
+);
+userRouter.patch(
+  "/updatePrice/:id",
+  authMiddleware.authenticate,
+  userController.updatePrice
+);
+userRouter.get(
+  "/getLowStockProducts",
+  authMiddleware.authenticate,
+  userController.getLowStockProducts
+);
+userRouter.get(
+  "/viewOrders",
+  authMiddleware.authenticate,
+  userController.viewOrders
+); // done
+userRouter.post(
+  "/updateOrderStatus/:id",
+  authMiddleware.authenticate,
+  userController.updateOrderStatus
+); // done
+userRouter.get(
+  "/getReturnRequests",
+  authMiddleware.authenticate,
+  userController.getReturnRequests
+);
+userRouter.post(
+  "/manageReturnRequest/:id",
+  authMiddleware.authenticate,
+  userController.manageReturnRequest
+);
+userRouter.post(
+  "/getOrdersByTimePeriod",
+  authMiddleware.authenticate,
+  userController.getOrdersByTimePeriod
+); // done
+userRouter.post(
+  "/addToSales/:id",
+  authMiddleware.authenticate,
+  userController.addToSale
+); // done
 
 //customer side
-userRouter.get('/viewYourProfile/:id',userController.viewYourProfile);
-userRouter.get('/viewProducts',userController.viewProducts);
-userRouter.get('/detailsOfProduct/:id',userController.detailsOfProduct);
-userRouter.get('/viewProductReviews/:id',userController.viewProductReviews);
-userRouter.post('/sendReview/:id',userController.sendReview);
-userRouter.post('/placeOrder',userController.placeOrder);
-userRouter.post('/postSubscribe', userController.postSubscribe);
-userRouter.post('/postUnsubscribe', userController.postUnsubscribe);
-userRouter.post('/returnRequest',userController.returnRequest);
-
+userRouter.get("/viewYourProfile/:id", userController.viewYourProfile);
+userRouter.get("/viewProducts", userController.viewProducts); // done
+userRouter.get("/detailsOfProduct/:id", userController.detailsOfProduct); // done
+userRouter.get("/viewProductReviews/:id", userController.viewProductReviews);
+userRouter.post("/sendReview/:id", userController.sendReview);
+userRouter.post("/placeOrder", userController.placeOrder); // done
 module.exports = userRouter;
