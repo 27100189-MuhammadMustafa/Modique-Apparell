@@ -24,13 +24,14 @@ const productSchema = new mongoose.Schema({
         }
     ],
 
-    /*images: [
+    attachments: [
         {
+            imageType: String,
             url: String,
-            name: String,
-            isPrimary: Boolean // Indicates if this image is the primary image for the product
+            fileName: String,
+            isPrimary: Boolean
         }
-    ],*/
+    ],
 
     materials: [String],
 

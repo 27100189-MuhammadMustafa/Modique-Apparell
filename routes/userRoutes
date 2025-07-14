@@ -32,4 +32,5 @@ userRouter.get("/detailsOfProduct/:id", userController.detailsOfProduct); // don
 userRouter.get("/viewProductReviews/:id", userController.viewProductReviews);
 userRouter.post("/sendReview/:id", userController.sendReview);
 userRouter.post("/placeOrder", userController.placeOrder); // done
+userRouter.post('/products/:id/image-base64', userController.uploadProductImageBase64)
 module.exports = userRouter;

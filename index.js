@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
 const cors = require('cors');
+const path = require('path');
 
 require('dotenv').config();
 const app = express();
@@ -16,6 +17,7 @@ app.use(cors(
         allowedHeaders: ['Content-Type', 'Authorization'] // Allowed headers
     }
 ));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 app.use(userRoutes);
 
 
