@@ -136,6 +136,7 @@ exports.getProducts = async (req,res) => {
 exports.getProductById = async (req, res) => {
     const productId = req.params.id;
     const product = await Product.findById(productId);
+    const product = await Product.findById(productId);
     if(!product) {
         return res.status(400).send("No product found with this ID");
     }
