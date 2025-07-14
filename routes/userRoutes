@@ -1,11 +1,11 @@
-const express = require('express');
+const express = require("express");
 const userRouter = express.Router();
-const userController = require('../controller/userController');
-const authMiddleware = require("./authMiddleware")
+const userController = require("../controller/userController");
+const authMiddleware = require("./authMiddleware");
 //admin side
 userRouter.get('/getUsers', authMiddleware.authenticate, userController.getUsers);
 userRouter.get('/getUserById/:id', authMiddleware.authenticate, userController.getUserById);
-userRouter.post('/signUp', authMiddleware.authenticate,userController.postSignUp);
+userRouter.post('/signUp', userController.postSignUp);
 userRouter.post('/login',userController.postLogin);
 userRouter.post('/addProduct',authMiddleware.authenticate, userController.postAddProduct);
 userRouter.get('/getProducts',authMiddleware.authenticate, userController.getProducts);
@@ -21,19 +21,15 @@ userRouter.post('/updateOrderStatus/:id',authMiddleware.authenticate, userContro
 userRouter.get('/getReturnRequests',authMiddleware.authenticate,userController.getReturnRequests);
 userRouter.post('/manageReturnRequest/:id',authMiddleware.authenticate, userController.manageReturnRequest);
 userRouter.post('/getOrdersByTimePeriod',authMiddleware.authenticate, userController.getOrdersByTimePeriod);
-userRouter.post('/addToSales', userController.addToSale);
+userRouter.post('/addToSales/:id',authMiddleware.authenticate, userController.addToSale);
 userRouter.get('/getSubscribedUsers',userController.getSubscribedUsers);
 userRouter.get('/getUserOrders/:id',userController.getUserOrders);
 
 //customer side
-userRouter.get('/viewYourProfile/:id',userController.viewYourProfile);
-userRouter.get('/viewProducts',userController.viewProducts);
-userRouter.get('/detailsOfProduct/:id',userController.detailsOfProduct);
-userRouter.get('/viewProductReviews/:id',userController.viewProductReviews);
-userRouter.post('/sendReview/:id',userController.sendReview);
-userRouter.post('/placeOrder',userController.placeOrder);
-userRouter.post('/postSubscribe', userController.postSubscribe);
-userRouter.post('/postUnsubscribe', userController.postUnsubscribe);
-userRouter.post('/returnRequest',userController.returnRequest);
-
+userRouter.get("/viewYourProfile/:id", userController.viewYourProfile);
+userRouter.get("/viewProducts", userController.viewProducts); // done
+userRouter.get("/detailsOfProduct/:id", userController.detailsOfProduct); // done
+userRouter.get("/viewProductReviews/:id", userController.viewProductReviews);
+userRouter.post("/sendReview/:id", userController.sendReview);
+userRouter.post("/placeOrder", userController.placeOrder); // done
 module.exports = userRouter;
