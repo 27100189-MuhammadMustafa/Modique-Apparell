@@ -4,15 +4,17 @@ const discountSchema = new mongoose.Schema({
         type: String,
         required:true,
     },
-    productId: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: true
-    }],
-    salePrice: {
-        type: Number,
+    displayName: {
+        type: String,
         required: true
     },
+    products: [{
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true
+        },
+    }],
     discountPercentage: {
         type: Number,
         required: true

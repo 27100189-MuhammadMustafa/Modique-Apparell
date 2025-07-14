@@ -6,6 +6,7 @@ const productSchema = new mongoose.Schema({
     subCategory: String, // Sub-category of the product
 
     price: Number,
+    discountedPrice: Number, // Price after discount
     stock: Number,
     lowStockThreshold: Number,
 
@@ -26,8 +27,8 @@ const productSchema = new mongoose.Schema({
     /*images: [
         {
             url: String,
-            altText: String,
-            isPrimary: Boolean
+            name: String,
+            isPrimary: Boolean // Indicates if this image is the primary image for the product
         }
     ],*/
 
@@ -58,5 +59,6 @@ const productSchema = new mongoose.Schema({
             comment: String,
         }
     ]
+
 })
 module.exports = mongoose.model('Product', productSchema);

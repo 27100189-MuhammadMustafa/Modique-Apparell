@@ -89,6 +89,10 @@ const orderSchema = new mongoose.Schema({
     returnReason: {
         type: String,
         default: ''
+    },
+    orderIdForUser: {
+        type: String,
+        required: true
     }
 })
 module.exports = mongoose.model('Order', orderSchema);

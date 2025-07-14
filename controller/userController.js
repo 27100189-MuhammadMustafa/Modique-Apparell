@@ -132,6 +132,15 @@ exports.getProducts = async (req,res) => {
     {
         return res.status(400).send("No products found")
     }
+    for (let product of products){
+        const sale = await Discount.findOne({ 'products.productId': product._id, isActive: true });
+        if(sale) {
+            const productSale = sale.discountPercentage;
+            if(productSale) {
+                product.discountedPrice = product.price - (product.price * (productSale/ 100));
+            }
+        }
+    }
     return res.status(200).send(products);
 }
 exports.getProductById = async (req, res) => {
@@ -288,19 +297,34 @@ exports.placeOrder = async (req, res) => {
         if (isNaN(quantity) || quantity <= 0) {
             return res.status(400).send(`Invalid quantity for product ${productDetails.name}`);
         }
-        if (productDetails.stock < quantity) {
-            return res.status(400).send(`Insufficient stock for product ${productDetails.name}`);
-        }
     
         productDetails.stock -= quantity;
-        if (productDetails.stock <= 0) {
-            productDetails.isActive = false;
+        if (productDetails.stock < 0) {
+            productDetails.stock = 0; 
+        }
+        if (productDetails.stock === 0) { // <-- fix here
+            productDetails.isActive = false; 
         }
         await productDetails.save();
     
-        const amount = productDetails.price * quantity;
+        const productPrice = Number(productDetails.isOnSale ? productDetails.discountedPrice : productDetails.price);
+        if (isNaN(productPrice)) {
+            return res.status(400).send(`Invalid price for product ${productDetails.name}`);
+        }
+        const amount = productPrice * quantity;
         total += amount;
+        console.log(total);
     }
+    
+    if (isNaN(total) || total <= 0) {
+        return res.status(400).send("Total amount must be greater than zero and valid");
+    }
+    const totalOrders = await Order.find();
+    const orderId = `ORD-${totalOrders.length + 1}-${new Date().getFullYear()}`;
+    if (total <= 0) {
+        return res.status(400).send("Total amount must be greater than zero");
+    }
+
     
     const newOrder = new Order({
         userId: userId,
@@ -318,7 +342,8 @@ exports.placeOrder = async (req, res) => {
         phoneNumber: phoneNumber || user.phoneNumber,
         firstName: firstName || user.firstName,
         lastName: lastName || user.lastName,
-        orderDate: new Date()
+        orderDate: new Date(),
+        orderIdForUser: orderId
     });
     
     const savedOrder = await newOrder.save();
@@ -326,7 +351,7 @@ exports.placeOrder = async (req, res) => {
     user.totalSpent = (user.totalSpent || 0) + total;
     await user.save();
     
-    return res.status(201).send({ msg: "Order placed successfully", orderId: savedOrder._id });
+    return res.status(201).send({ msg: "Order placed successfully", orderId: savedOrder.orderIdForUser, totalAmount: savedOrder.totalAmount });
 }
 exports.viewOrders = async (req, res) => {
     const orders = await Order.find();
@@ -378,27 +403,31 @@ exports.manageReturnRequest = async (req, res) => {
     return res.status(200).send({msg: "Return request managed successfully", orderStatus: order.orderStatus, paymentStatus: order.paymentStatus});
 }
 exports.addToSale = async (req, res) => {
-    const { name, salePrice, discountPercentage, startDate, endDate} = req.body;
-    const productId = req.params.id;
-    if(!name || !salePrice || !discountPercentage || !startDate || !endDate) {
+    const { name,products,startDate, endDate,discountPercentage} = req.body;
+    if(!name   || !startDate || !endDate) {
         return res.status(400).send("Please provide all required fields");
-    }
-    if(discountPercentage <= 0 || discountPercentage > 100) {
-        return res.status(400).send("Discount percentage must be between 1 and 100");
     }
     if(new Date(startDate) >= new Date(endDate)) {
         return res.status(400).send("End date must be after start date");
     }
     const discount = new Discount({
-        name,
-        productId: productId,
-        salePrice,
-        discountPercentage,
+        name:name,
+        displayName: name,
+        products:products,
+        discountPercentage: discountPercentage || 0,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         isActive: true
     });
     const savedDiscount = await discount.save();
+    for (const product of products) {
+        const productDetails = await Product.findById(product.productId);
+        if (!productDetails) {
+            return res.status(400).send(`Product with ID ${product.productId} not found`);
+        }
+        productDetails.isOnSale = true;
+        await productDetails.save();
+    }
     return res.status(201).send({msg: "Sale added successfully", discount: savedDiscount});
 }
 exports.viewYourProfile = async (req, res) => {
@@ -420,13 +449,29 @@ exports.viewProducts = async (req,res) => {
     if(products.length === 0) {
         return res.status(400).send("No products found");
     }
+    for (let product of products){
+        const sale = await Discount.findOne({ 'products.productId': product._id, isActive: true });
+        if(sale) {
+            const productSale = sale.discountPercentage;
+            if(productSale) {
+                product.discountedPrice = product.price - (product.price * (productSale / 100));
+            }
+        }
+    }
     return res.status(200).json(products);
 }
 exports.detailsOfProduct = async (req, res) => {
     const productId = req.params.id;
-    const product =  await Product.findById(productId).select('-createdAt -updatedAt -deletedAt -isDeletedFromCart -hashVariants -lowStockThreshold -isActive -ratings -materials -options -variants');
+    const product =  await Product.findById(productId);
     if(!product) {
         return res.status(400).send("No product found with this ID");
+    }
+    const sale = await Discount.findOne({ 'products.productId': product._id, isActive: true });
+    if(sale) {
+        const productSale = sale.discountPercentage;
+        if(productSale) {
+            product.discountedPrice = product.price - (product.price * (productSale/ 100));
+        }
     }
     return res.status(200).json(product);
 }
@@ -565,7 +610,7 @@ exports.returnRequest = async (req, res) => {
     if (!orderId || !reason) {
         return res.status(400).send("Order ID and reason are required");
     }
-    const order = await Order.findById(orderId);
+    const order = await Order.findOne({orderIdForUser: orderId});
     if (!order) {
         return res.status(400).send("No order found with this ID");
     }
@@ -580,5 +625,4 @@ exports.returnRequest = async (req, res) => {
     order.updatedAt = new Date();
     await order.save();
     return res.status(200).send("Return request submitted successfully");
-
 }
