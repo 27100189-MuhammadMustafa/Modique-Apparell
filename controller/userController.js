@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const Product = require('../models/products');
 const Order = require('../models/order');
 const Discount = require('../models/discounts');
+const mongoose= require('mongoose');
 
 
 exports.getUsers = async (req, res) => {
@@ -145,9 +146,16 @@ exports.getProducts = async (req,res) => {
 }
 exports.getProductById = async (req, res) => {
     const productId = req.params.id;
-    const product = await Product.findById(productId);
+    const product =  await Product.findById(productId);
     if(!product) {
         return res.status(400).send("No product found with this ID");
+    }
+    const sale = await Discount.findOne({ 'products.productId': product._id, isActive: true });
+    if(sale) {
+        const productSale = sale.discountPercentage;
+        if(productSale) {
+            product.discountedPrice = product.price - (product.price * (productSale/ 100));
+        }
     }
     return res.status(200).json(product);
 }
@@ -306,8 +314,19 @@ exports.placeOrder = async (req, res) => {
             productDetails.isActive = false; 
         }
         await productDetails.save();
-    
-        const productPrice = Number(productDetails.isOnSale ? productDetails.discountedPrice : productDetails.price);
+        const sale = await Discount.findOne({'products.productId':product.productId, isActive: true });
+        console.log(sale);
+        let discountedPrice;
+        if(sale) {
+            const productSale = sale.discountPercentage;
+            
+            if(productSale) {
+                discountedPrice = productDetails.price - (productDetails.price * (productSale/ 100));
+            }
+        }
+        console.log(discountedPrice);
+        const productPrice = Number(productDetails.isOnSale ? discountedPrice : productDetails.price);
+        console.log(productPrice);
         if (isNaN(productPrice)) {
             return res.status(400).send(`Invalid price for product ${productDetails.name}`);
         }
