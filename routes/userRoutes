@@ -21,7 +21,7 @@ userRouter.post('/updateOrderStatus/:id',authMiddleware.authenticate, userContro
 userRouter.get('/getReturnRequests',authMiddleware.authenticate,userController.getReturnRequests);
 userRouter.post('/manageReturnRequest/:id',authMiddleware.authenticate, userController.manageReturnRequest);
 userRouter.post('/getOrdersByTimePeriod',authMiddleware.authenticate, userController.getOrdersByTimePeriod);
-userRouter.post('/addToSales/:id',authMiddleware.authenticate, userController.addToSale);
+userRouter.post('/addToSales',authMiddleware.authenticate, userController.addToSale);
 userRouter.get('/getSubscribedUsers',userController.getSubscribedUsers);
 userRouter.get('/getUserOrders/:id',userController.getUserOrders);
 userRouter.get('/recentActivity',userController.recentActivity);

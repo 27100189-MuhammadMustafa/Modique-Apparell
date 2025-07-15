@@ -154,10 +154,11 @@ exports.postLogout = (req, res) => {
 };
 
 exports.postAddProduct = async ( req, res) => {
-    const {name, description, category, subCategory, price, stock, lowStockThreshold,variants, options, materials} = req.body;
+    const {name, description, category, subCategory, price, stock, lowStockThreshold,variants, options, materials,base64Image,isPrimary=false} = req.body;
     if (!name || !description || !category || !subCategory || !price || !stock) {
         return res.status(400).send("Please provide all required fields");
     }
+
     const newProduct = new Product({
         name,
         description,
@@ -177,7 +178,21 @@ exports.postAddProduct = async ( req, res) => {
         isDeletedFromCart: false
     });
     const savedProduct = await newProduct.save();
-    return res.status(201).send("Product added successfully");
+    if (base64Image) {
+        try {
+            const imageUrl = await uploadBase64ToAzureBlob(base64Image, savedProduct._id, "product");
+            savedProduct.attachments.push({
+                imageType: base64Image.split(';')[0].split(':')[1], 
+                url: imageUrl,
+                fileName: path.basename(imageUrl),
+                isPrimary: isPrimary
+            });
+            await savedProduct.save();
+        } catch (err) {
+            return res.status(500).send({msg:"Failed to save image",error: err.message});
+        }
+    }
+    return res.status(201).send({msg:"Product added successfully", product: savedProduct});
 }
 exports.getProducts = async (req,res) => {
     const products = await Product.find();
@@ -525,7 +540,7 @@ exports.manageReturnRequest = async (req, res) => {
 };
 exports.addToSale = async (req, res) => {
     const { name,products, discountPercentage, startDate, endDate} = req.body;
-    if(!name || !salePrice || !discountPercentage || !startDate || !endDate) {
+    if(!name || !discountPercentage || !startDate || !endDate) {
         return res.status(400).send("Please provide all required fields");
     }
     if(discountPercentage <= 0 || discountPercentage > 100) {
@@ -537,7 +552,6 @@ exports.addToSale = async (req, res) => {
     const discount = new Discount({
         name,
         products : products,
-        salePrice,
         discountPercentage,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
