@@ -24,6 +24,7 @@ userRouter.post('/getOrdersByTimePeriod',authMiddleware.authenticate, userContro
 userRouter.post('/addToSales/:id',authMiddleware.authenticate, userController.addToSale);
 userRouter.get('/getSubscribedUsers',userController.getSubscribedUsers);
 userRouter.get('/getUserOrders/:id',userController.getUserOrders);
+userRouter.get('/recentActivity',userController.recentActivity);
 
 //customer side
 userRouter.get("/viewYourProfile/:id", userController.viewYourProfile);

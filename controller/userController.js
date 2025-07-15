@@ -8,27 +8,28 @@ const Order = require('../models/order');
 const Discount = require('../models/discounts');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
-async function saveBase64ImageToDisk(base64String, productId, fileNamePrefix = "product") {
-  // Parse base64 string
+const { BlobServiceClient } = require('@azure/storage-blob');
+const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+const AZURE_STORAGE_CONTAINER_NAME = process.env.AZURE_STORAGE_CONTAINER_NAME;
+
+async function uploadBase64ToAzureBlob(base64String, productId, fileNamePrefix = "product") {
   const matches = base64String.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
   if (!matches) throw new Error('Invalid base64 string');
   const ext = matches[1].split('/')[1];
   const data = matches[2];
   const buffer = Buffer.from(data, 'base64');
   const fileName = `${fileNamePrefix}_${productId}_${Date.now()}.${ext}`;
-  const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'products');
-  const filePath = path.join(uploadDir, fileName);
-
-  // Ensure directory exists
-  fs.mkdirSync(uploadDir, { recursive: true });
-
-  // Save file
-  fs.writeFileSync(filePath, buffer);
-
-  // Return relative URL (assuming /public is served statically)
-  return `/uploads/products/${fileName}`;
+  const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+  const containerClient = blobServiceClient.getContainerClient(AZURE_STORAGE_CONTAINER_NAME);
+  const blockBlobClient = containerClient.getBlockBlobClient(fileName);
+  await blockBlobClient.uploadData(buffer, {
+    blobHTTPHeaders: { blobContentType: matches[1] }
+  });
+  return `${blockBlobClient.url}`;
 }
+
 exports.uploadProductImageBase64 = async (req, res) => {
   const productId = req.params.id;
   const { base64Image, isPrimary = false } = req.body;
@@ -40,18 +41,23 @@ exports.uploadProductImageBase64 = async (req, res) => {
     return res.status(400).send("No product found with this ID");
   }
   try {
-    const imageUrl = await saveBase64ImageToDisk(base64Image, productId);
-    // Add to attachments array
+    const imageUrl = await uploadBase64ToAzureBlob(base64Image, productId);
+    for (const attachment of product.attachments) {
+      if (attachment.isPrimary && isPrimary) {
+        return res.status(400).send("Primary image already exists. Please set another image as primary before setting this one.");
+      }
+    }
     product.attachments.push({
-      imageType: base64Image.split(';')[0].split(':')[1], // e.g. "image/png"
+      imageType: base64Image.split(';')[0].split(':')[1], 
       url: imageUrl,
       fileName: path.basename(imageUrl),
       isPrimary: isPrimary
     });
+
     await product.save();
     return res.status(200).send({ imageUrl });
   } catch (err) {
-    return res.status(500).send("Failed to save image");
+    return res.status(500).send({msg:"Failed to save image",error: err.message});
   }
 };
 
@@ -185,6 +191,7 @@ exports.getProducts = async (req,res) => {
             const productSale = sale.discountPercentage;
             if(productSale) {
                 product.discountedPrice = product.price - (product.price * (productSale/ 100));
+
             }
         }
     }
@@ -756,5 +763,35 @@ exports.returnRequest = async (req, res) => {
     order.updatedAt = new Date();
     await order.save();
     return res.status(200).send("Return request submitted successfully");
-
+}
+exports.recentActivity = async (req, res) => {
+  const recentUsersAdded = await User.find()
+    .sort({ createdAt: -1 })
+    .limit(1)
+    .select("-password");
+  const recentOrdersPlaced = await Order.find()
+    .sort({ orderDate: -1 })
+    .limit(1)
+    .populate("userId", "firstName lastName email");
+  const recentProductsAdded = await Product.find()
+    .sort({ createdAt: -1 })
+    .limit(1);
+  const recentDiscountsAdded = await Discount.find()
+    .sort({ createdAt: -1 })
+    .limit(1);
+  const recentProductsUpdated = await Product.find()
+    .sort({updatedAt: -1})
+    .limit(1)
+  const recentOrdersUpdated = await Order.find()
+    .sort({ updatedAt: -1 })
+    .limit(1)
+    .populate("userId", "firstName lastName email");
+  return res.status(200).json({
+    recentUsersAdded,
+    recentOrdersPlaced,
+    recentProductsAdded,
+    recentDiscountsAdded,
+    recentProductsUpdated,
+    recentOrdersUpdated
+  });
 }
